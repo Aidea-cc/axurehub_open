@@ -1,0 +1,18 @@
+name = "staticpages"
+pages_build_output_dir = "."
+
+[vars]
+ADMIN_PASSWORD = "Axure@2026"
+SITE_PASSWORD = "2026"
+R2_ACCOUNT_ID = "YOUR_R2_ACCOUNT_ID"
+R2_BUCKET_NAME = "YOUR_R2_BUCKET_NAME"
+R2_ACCESS_KEY_ID = "YOUR_R2_ACCESS_KEY_ID"
+R2_SECRET_ACCESS_KEY = "YOUR_R2_SECRET_ACCESS_KEY"
+
+[[kv_namespaces]]
+binding = "RDS_STORE"
+id = "81be5e694ed44fcb8242455e08f05723"
+
+[[r2_buckets]]
+binding = "RDS_FILES"
+bucket_name = "axure-data"

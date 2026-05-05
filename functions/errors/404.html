@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - 页面未找到</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      padding: 3rem;
+      max-width: 600px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .error-code {
+      font-size: 8rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #eab308 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 60px rgba(239, 68, 68, 0.3);
+    }
+
+    .error-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 1rem;
+    }
+
+    .error-message {
+      font-size: 1.05rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 0.5rem;
+    }
+
+    .proto-name {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
+      font-family: "Monaco", "Consolas", monospace;
+      font-size: 0.95rem;
+      margin: 0.5rem 0;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .reasons {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: left;
+    }
+
+    .reasons h3 {
+      font-size: 1rem;
+      color: #cbd5e1;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .reasons ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .reasons li {
+      padding: 0.5rem 0;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+    }
+
+    .reasons li:last-child {
+      border-bottom: none;
+    }
+
+    .reasons li::before {
+      content: "•";
+      color: #3b82f6;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.75rem 1.8rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(51, 65, 85, 0.8);
+      color: #e2e8f0;
+      border: 1px solid rgba(71, 85, 105, 0.6);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(71, 85, 105, 0.9);
+      transform: translateY(-2px);
+    }
+
+    .decoration {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      z-index: -1;
+    }
+
+    .decoration-1 {
+      top: -100px;
+      left: -100px;
+      background: #ef4444;
+    }
+
+    .decoration-2 {
+      bottom: -100px;
+      right: -100px;
+      background: #3b82f6;
+    }
+
+    .footer-text {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    @media (max-width: 640px) {
+      .error-code { font-size: 5rem; }
+      .container { padding: 2rem 1.5rem; }
+      .error-title { font-size: 1.4rem; }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="decoration decoration-1"></div>
+  <div class="decoration decoration-2"></div>
+
+  <div class="container">
+    <div class="error-code">404</div>
+    <h1 class="error-title">哎呀，页面不见了</h1>
+
+    <p class="error-message">
+      您访问的原型 <span class="proto-name" id="proto-name-display">--</span> 当前无法加载
+    </p>
+
+    <div class="reasons">
+      <h3>💡 可能的原因：</h3>
+      <ul>
+        <li>该原型已被管理员删除或移除</li>
+        <li>原型文件正在上传中，请稍后再试</li>
+        <li>文件路径不正确或已被重命名</li>
+        <li>存储服务暂时不可用，请稍后刷新</li>
+      </ul>
+    </div>
+
+    <div class="actions">
+      <a href="/" class="btn btn-primary">🏠 返回首页</a>
+      <button onclick="location.reload()" class="btn btn-secondary">🔄 刷新页面</button>
+    </div>
+
+    <p class="footer-text">
+      如果问题持续存在，请联系管理员获取帮助
+    </p>
+  </div>
+
+  <script>
+    // 从URL中提取原型名称并显示
+    (function() {
+      const pathParts = window.location.pathname.split('/').filter(p => p);
+      if (pathParts.length >= 2 && pathParts[0] === 'proto') {
+        const protoName = decodeURIComponent(pathParts[1]);
+        const displayName = document.getElementById('proto-name-display');
+        if (displayName) {
+          displayName.textContent = protoName;
+        }
+        // 更新页面标题
+        document.title = `404 - 原型「${protoName}」未找到`;
+      }
+    })();
+  </script>
+
+</body>
+</html>

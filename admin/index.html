@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据管理 — RDS文件库</title>
+  <!-- 核心依赖库 -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --danger: #ef4444;
+      --danger-dark: #dc2626;
+      --success: #10b981;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #273548;
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── 登录页 ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-logo {
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-card h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-card p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 0.9rem 1.2rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .login-card input:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .error-msg {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 0.6rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+    }
+
+    /* ── 主界面 ── */
+    #app-screen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    /* 顶栏 */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .topbar h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .topbar .back-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.2s;
+    }
+
+    .topbar .back-link:hover {
+      color: var(--text);
+    }
+
+    .admin-badge {
+      background: rgba(37, 99, 235, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(37, 99, 235, 0.4);
+      padding: 0.25rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Tab 导航 */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      background: var(--surface);
+    }
+
+    .tab-btn {
+      padding: 1rem 1.5rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* 主内容区 */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* 卡片 */
+    .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-card h3 {
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* 表单控件 */
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type=text],
+    input[type=url],
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    input[type=text]:focus,
+    input[type=url]:focus,
+    textarea:focus {
+      border-color: var(--primary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-col.full {
+      grid-column: 1/-1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.6rem;
+      border-radius: 99rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .badge-processing {
+      background: var(--primary-light);
+      color: var(--primary);
+      animation: pulse 2s infinite;
+    }
+
+    .badge-deleting {
+      background: #fef3c7;
+      color: #92400e;
+      animation: pulse 2s infinite;
+    }
+
+    .badge-error {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+
+    .item-processing {
+      background: #f8fafc;
+      border-left: 4px solid var(--primary);
+    }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-blue {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-blue:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-red {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .btn-red:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      border-color: var(--text);
+    }
+
+    /* 链接列表 */
+    .link-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 0.8rem;
+      transition: border-color 0.2s;
+    }
+
+    .link-item:hover {
+      border-color: var(--primary);
+    }
+
+    .link-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      width: 2rem;
+      text-align: center;
+    }
+
+    .link-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .link-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .link-url {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .link-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .link-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* 原型/页面列表 */
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .item-row:hover {
+      border-color: var(--border);
+    }
+
+    .item-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .item-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    /* 上传区域 */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg);
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.05);
+    }
+
+    .upload-zone .upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .upload-zone p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .upload-zone strong {
+      color: var(--text);
+    }
+
+    .upload-zone input[type=file] {
+      display: none;
+    }
+
+    /* 进度条 */
+    .progress-wrap {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .progress-wrap.show {
+      display: block;
+    }
+
+    .progress-bar-bg {
+      background: var(--border);
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #60a5fa);
+      border-radius: 100px;
+      transition: width 0.2s;
+      width: 0%;
+    }
+
+    .progress-text {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* Toast 通知 */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: white;
+      border: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success {
+      border-color: var(--success);
+    }
+
+    .toast.error {
+      border-color: var(--danger);
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    /* 分割线 */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+
+    /* emoji picker 行 */
+    .emoji-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .emoji-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.15s;
+    }
+
+    .emoji-btn:hover {
+      background: var(--primary);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+    }
+
+    .section-header h3 {
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .main {
+        padding: 1rem;
+      }
+
+      .tabs {
+        padding: 0 1rem;
+        overflow-x: auto;
+      }
+
+      .tab-btn {
+        white-space: nowrap;
+      }
+    }
+
+    /* 拖拽效果 */
+    .link-item {
+      cursor: grab;
+    }
+  </style>
+
+  <!-- 外部依赖库 -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+</head>
+
+<body>
+
+  <!-- 登录页 -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">🔐</div>
+      <h1>数据管理</h1>
+      <p>请输入管理员密码以继续</p>
+      <div id="login-error" class="error-msg" style="display:none;"></div>
+      <input type="password" id="admin-password" placeholder="管理员密码" autocomplete="off">
+      <button class="btn-primary" onclick="doLogin()">进入管理后台</button>
+    </div>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="app-screen">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a href="/" class="back-link">← 返回首页</a>
+        <h1>数据管理</h1>
+      </div>
+      <span class="admin-badge">🔑 管理员</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('proto')" id="tab-proto">📦 Axure原型</button>
+      <button class="tab-btn" onclick="switchTab('pages')" id="tab-pages">📄 静态页面</button>
+      <button class="tab-btn" onclick="switchTab('links')" id="tab-links">🔗 外部链接</button>
+    </div>
+
+    <div class="main">
+
+      <!-- ─────── Tab: Axure 原型 ─────── -->
+      <div class="tab-panel active" id="panel-proto">
+        <!-- 上传区 -->
+        <div class="panel-card">
+          <h3>📤 上传 Axure 原型</h3>
+          <div class="form-row">
+            <div class="form-col full">
+              <label>原型名称</label>
+              <input type="text" id="proto-name" placeholder="例如：知口袋V2.1_20260401">
+            </div>
+          </div>
+          <div class="upload-zone" id="proto-drop-zone" onclick="document.getElementById('proto-folder-input').click()">
+            <input type="file" id="proto-folder-input" webkitdirectory multiple>
+            <div class="upload-icon">📁</div>
+            <p><strong>点击选择 Axure 文件夹</strong></p>
+            <p style="margin-top:0.4rem; font-size:0.78rem;">直接选择包含 index.html 的整个文件夹</p>
+          </div>
+          <div class="progress-wrap" id="proto-progress">
+            <div class="progress-bar-bg">
+              <div class="progress-bar" id="proto-progress-bar"></div>
+            </div>
+            <div class="progress-text" id="proto-progress-text">准备上传...</div>
+          </div>
+          <div style="margin-top:1rem; text-align:right;">
+            <button class="btn btn-blue" onclick="uploadProto()">🚀 开始上传</button>
+          </div>
+        </div>
+
+        <!-- 已上传列表 -->
+        <div class="panel-card">
+          <div class="section-header">
+            <h3>📋 已上传原型</h3>
+            <button class="btn btn-ghost btn-sm" onclick="loadProtos()">↻ 刷新</button>
+          </div>
+          <div class="item-list" id="proto-list">
+            <div class="empty-state">
+              <div class="empty-icon">⏳</div>
+              <p>加载中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────── Tab: 静态页面 ─────── -->
+      <div class="tab-panel" id="panel-pages">
+        <!-- 上传区 -->
+        <div class="panel-card">
+          <h3>📤 上传静态 HTML 页面</h3>
+          <div class="form-row">
+            <div class="form-col full">
+              <label>页面名称（不含 .html）</label>
+              <input type="text" id="page-name" placeholder="例如：官网支付原型">
+            </div>
+          </div>
+          <div class="upload-zone" id="page-drop-zone" onclick="document.getElementById('page-file-input').click()">
+            <input type="file" id="page-file-input" accept=".html,.htm">
+            <div class="upload-icon">📃</div>
+            <p><strong>点击选择 HTML 文件</strong> 或拖入</p>
+            <p id="page-selected-file" style="margin-top:0.5rem; font-size:0.82rem; color:#93c5fd;"></p>
+          </div>
+          <div style="margin-top:1rem; text-align:right;">
+            <button class="btn btn-blue" onclick="uploadPage()">🚀 上传页面</button>
+          </div>
+        </div>
+
+        <!-- 已上传列表 -->
+        <div class="panel-card">
+          <div class="section-header">
+            <h3>📋 已上传页面</h3>
+            <button class="btn btn-ghost btn-sm" onclick="loadPages()">↻ 刷新</button>
+          </div>
+          <div class="item-list" id="page-list">
+            <div class="empty-state">
+              <div class="empty-icon">⏳</div>
+              <p>加载中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────── Tab: 外部链接 ─────── -->
+      <div class="tab-panel" id="panel-links">
+        <!-- 新增表单 -->
+        <div class="panel-card">
+          <h3>➕ 添加外部链接</h3>
+          <div class="form-row">
+            <div class="form-col">
+              <label>名称</label>
+              <input type="text" id="link-name" placeholder="例如：飞书产品文档">
+            </div>
+            <div class="form-col">
+              <label>图标（Emoji）</label>
+              <input type="text" id="link-icon" placeholder="🔗" maxlength="4">
+              <div class="emoji-row">
+                <span class="emoji-btn" onclick="setEmoji('🔗')">🔗</span>
+                <span class="emoji-btn" onclick="setEmoji('📄')">📄</span>
+                <span class="emoji-btn" onclick="setEmoji('🕊️')">🕊️</span>
+                <span class="emoji-btn" onclick="setEmoji('🌐')">🌐</span>
+                <span class="emoji-btn" onclick="setEmoji('🏛️')">🏛️</span>
+                <span class="emoji-btn" onclick="setEmoji('💰')">💰</span>
+                <span class="emoji-btn" onclick="setEmoji('📊')">📊</span>
+                <span class="emoji-btn" onclick="setEmoji('🎯')">🎯</span>
+                <span class="emoji-btn" onclick="setEmoji('🧮')">🧮</span>
+                <span class="emoji-btn" onclick="setEmoji('👨‍🔬')">👨‍🔬</span>
+              </div>
+            </div>
+            <div class="form-col full">
+              <label>链接 URL</label>
+              <input type="url" id="link-url" placeholder="https://...">
+            </div>
+            <div class="form-col full">
+              <label>描述（可选）</label>
+              <input type="text" id="link-desc" placeholder="简短说明">
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <button class="btn btn-blue" onclick="addLink()">＋ 添加</button>
+          </div>
+        </div>
+
+        <!-- 链接列表 -->
+        <div class="panel-card">
+          <div class="section-header">
+            <h3>📋 现有外部链接</h3>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="btn btn-ghost btn-sm" onclick="loadLinks()">↻ 刷新</button>
+            </div>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">拖拽条目可调整排序，更改将自动保存</p>
+          <div id="link-list">
+            <div class="empty-state">
+              <div class="empty-icon">⏳</div>
+              <p>加载中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const ADMIN_KEY_STORAGE = 'rds_admin_key';
+    let adminKey = '';
+    let currentLinks = [];
+    let selectedPageFile = null;
+    let selectedProtoFiles = [];
+
+    // ── 登录 ──
+    function doLogin() {
+      const pw = document.getElementById('admin-password').value.trim();
+      if (!pw) return;
+
+      fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      })
+        .then(async r => {
+          if (r.status === 403) {
+            showLoginError('密码错误，请重试');
+            return;
+          }
+          adminKey = pw;
+          sessionStorage.setItem(ADMIN_KEY_STORAGE, adminKey);
+          enterApp();
+        })
+        .catch(() => {
+          showLoginError('网络错误，请刷新后重试');
+        });
+    }
+
+    function showLoginError(msg) {
+      const el = document.getElementById('login-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    document.getElementById('admin-password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    function enterApp() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      loadAll();
+    }
+
+    // 恢复 session
+    const savedKey = sessionStorage.getItem(ADMIN_KEY_STORAGE);
+    if (savedKey) {
+      adminKey = savedKey;
+      enterApp();
+    }
+
+    // ── Tab 切换 ──
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      document.getElementById('panel-' + name).classList.add('active');
+    }
+
+    // ── 工具函数 ──
+    function toast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+      el.className = `toast ${type} show`;
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    function formatDate(ts) {
+      return new Date(ts).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    function adminHeaders(extra = {}) {
+      return { 'X-Admin-Key': adminKey, ...extra };
+    }
+
+    // ── 加载所有数据 ──
+    function loadAll() {
+      loadProtos();
+      loadPages();
+      loadLinks();
+    }
+
+    // ─────────────────────────────────────────────
+    // AXURE 原型
+    // ─────────────────────────────────────────────
+    let pollTimer = null;
+
+    async function loadProtos() {
+      const r = await fetch('/api/proto');
+      const list = await r.json();
+      const el = document.getElementById('proto-list');
+
+      if (!list.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>暂无原型，使用上方表单上传</p></div>`;
+        return;
+      }
+
+      let hasProcessing = false;
+
+      el.innerHTML = list.map(item => {
+        const isProcessing = item.status === 'processing';
+        const isDeleting = item.status === 'deleting';
+        const isError = item.status === 'error' || item.status === 'delete_error';
+        if (isProcessing || isDeleting) hasProcessing = true;
+
+        return `
+      <div class="item-row ${isProcessing || isDeleting ? 'item-processing' : ''}" id="proto-row-${item.name}">
+        <div class="item-icon">${isProcessing ? '⏳' : isDeleting ? '🗑️' : isError ? '❌' : '📁'}</div>
+        <div class="item-info">
+          <div class="item-name">
+            ${item.name}
+            ${isProcessing ? '<span class="badge badge-processing">后台处理中...</span>' : ''}
+            ${isDeleting ? '<span class="badge badge-deleting">正在清理存储空间...</span>' : ''}
+            ${isError ? `<span class="badge badge-error" title="${item.error || ''}">处理出错</span>` : ''}
+          </div>
+          <div class="item-meta">
+            📅 ${formatDate(item.uploadTime)} 
+            &nbsp;·&nbsp; 
+            ${isProcessing ? '正在同步到存储桶' : isDeleting ? '正在从 R2 移除文件' : `${item.fileCount} 个文件`}
+          </div>
+        </div>
+        <div class="item-actions">
+          ${isDeleting ? `
+            <span style="color:var(--text-muted);font-size:0.8rem;margin-right:0.5rem;">
+              ${item.lastActionTime && (Date.now() - item.lastActionTime > 60000) ? '可能卡死' : '删除中...'}
+            </span>
+            <button class="btn btn-red btn-sm" onclick="deleteProto('${item.name}', this)">重试删除</button>
+          ` : `
+            ${isProcessing ? '<span style="color:var(--text-muted);font-size:0.8rem;margin-right:0.5rem;">上传中...</span>' : `<a href="/proto/${encodeURIComponent(item.name)}/" target="_blank" class="btn btn-ghost btn-sm">预览</a>`}
+            <button class="btn btn-red btn-sm" onclick="deleteProto('${item.name}', this)">删除</button>
+          `}
+        </div>
+      </div>
+      `;
+      }).join('');
+
+      // 自动轮询处理状态
+      if (hasProcessing) {
+        if (!pollTimer) {
+          pollTimer = setInterval(loadProtos, 5000); // 5秒轮放一次
+        }
+      } else {
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      }
+    }
+
+    // 文件选择处理
+    document.getElementById('proto-folder-input').addEventListener('change', async function () {
+      const files = Array.from(this.files);
+      if (!files.length) return;
+
+      const zone = document.getElementById('proto-drop-zone');
+      const nameInput = document.getElementById('proto-name');
+
+      selectedProtoFiles = files; // 存储文件数组
+      zone.querySelector('p').innerHTML = `<strong>已选择 ${files.length} 个文件</strong>`;
+      const firstPath = files[0].webkitRelativePath;
+      const folderName = firstPath.split('/')[0];
+      if (!nameInput.value && folderName) {
+        nameInput.value = folderName;
+      }
+    });
+
+    // 拖拽逻辑支持 ZIP 和 文件夹
+    const protoDrop = document.getElementById('proto-drop-zone');
+    protoDrop.addEventListener('dragover', e => { e.preventDefault(); protoDrop.classList.add('dragover'); });
+    protoDrop.addEventListener('dragleave', () => protoDrop.classList.remove('dragover'));
+    protoDrop.addEventListener('drop', async e => {
+      e.preventDefault();
+      protoDrop.classList.remove('dragover');
+
+      // 仅支持文件夹拖入（部分浏览器行为不同，建议点击选择）
+      const items = e.dataTransfer.items;
+      if (items && items[0]) {
+        toast('请通过点击按钮选择文件夹', 'info');
+      }
+    });
+
+    async function uploadProto() {
+      let name = document.getElementById('proto-name').value.trim();
+      if (!name) { toast('请填写原型名称', 'error'); return; }
+      name = name.normalize('NFC');
+      if (!selectedProtoFiles || (Array.isArray(selectedProtoFiles) && !selectedProtoFiles.length)) {
+        toast('请先选择文件夹或压缩包', 'error'); return;
+      }
+
+      const progressWrap = document.getElementById('proto-progress');
+      const progressBar  = document.getElementById('proto-progress-bar');
+      const progressText = document.getElementById('proto-progress-text');
+      progressWrap.classList.add('show');
+      progressBar.style.width = '0%';
+      progressText.textContent = '准备上传...';
+
+      // ── 1. 整理文件清单 ────────────────
+      let fileList = Array.from(selectedProtoFiles).map(f => {
+        const p = (f.webkitRelativePath || f.name).normalize('NFC');
+        const relPath = p.includes('/') ? p.substring(p.indexOf('/') + 1) : p;
+        return { name: relPath.replace(/\\/g, '/'), data: f };
+      });
+
+      if (!fileList.length) {
+        toast('未发现文件', 'error');
+        progressWrap.classList.remove('show');
+        return;
+      }
+
+      // ── 2. 剥离公共根目录 ─────────────────
+      let commonRoot = '';
+      if (fileList.length > 1) {
+        const paths = fileList.map(f => f.name);
+        const segs  = paths[0].split('/');
+        for (let i = 0; i < segs.length - 1; i++) {
+          const prefix = segs.slice(0, i + 1).join('/') + '/';
+          if (paths.every(p => p.startsWith(prefix))) commonRoot = prefix;
+          else break;
+        }
+      } else if (fileList[0].name.includes('/')) {
+        commonRoot = fileList[0].name.substring(0, fileList[0].name.lastIndexOf('/') + 1);
+      }
+
+      fileList = fileList.map(f => ({
+        name: (commonRoot && f.name.startsWith(commonRoot)) ? f.name.substring(commonRoot.length) : f.name,
+        data: f.data,
+      }));
+
+      const total = fileList.length;
+      let completed = 0;
+      let signatureMap = new Map();
+      
+      // 定义并发限制执行器
+      const runConcurrent = async (items, fn, limit) => {
+        let i = 0;
+        let running = 0;
+        const errs = [];
+        return new Promise((resolve, reject) => {
+          const next = async () => {
+            if (errs.length > 0) return reject(errs[0]);
+            if (i >= items.length && running === 0) return resolve();
+            if (i >= items.length) return;
+            
+            while (running < limit && i < items.length) {
+              const idx = i++;
+              running++;
+              fn(items[idx], idx).then(() => {
+                running--;
+                next();
+              }).catch(e => {
+                running--;
+                errs.push(e);
+                reject(e);
+              });
+            }
+          };
+          next();
+        });
+      };
+
+      try {
+        // ========== 阶段一：批量获取所有预签名 URL ==========
+        const BATCH_SIZE = 500; // 提速：每批 500 个文件，减少向 Worker 发起的请求次数
+        for (let i = 0; i < fileList.length; i += BATCH_SIZE) {
+          const chunk = fileList.slice(i, i + BATCH_SIZE);
+          progressText.textContent = `🔑 获取签名 (${i + 1}-${Math.min(i + BATCH_SIZE, total)})...`;
+          
+          const presignResp = await fetch(`/api/proto?action=presign&name=${encodeURIComponent(name)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+            body: JSON.stringify({ files: chunk.map(f => ({ name: f.name })) }),
+          });
+
+          if (!presignResp.ok) {
+            const err = await presignResp.json().catch(() => ({}));
+            throw new Error(`获取签名失败: ${err.error || presignResp.status}`);
+          }
+
+          const { urls } = await presignResp.json();
+          if (urls && Array.isArray(urls)) {
+            urls.forEach(u => signatureMap.set(u.name, u));
+          } else {
+             throw new Error(`后端返回的签名数据结构异常`);
+          }
+        }
+
+        // ========== 阶段二：引入高并发请求池进行上传 ==========
+        progressText.textContent = `🚀 准备并发上传...`;
+        // 为避免频繁触发 DOM 更新导致浏览器卡顿，每百分之一更新一次
+        let lastReportedPct = -1;
+        
+        const uploadOne = async (f) => {
+          const sign = signatureMap.get(f.name);
+          if (!sign || !sign.url) {
+            throw new Error(`文件 ${f.name} 的签名 URL 获取失败`);
+          }
+
+          let lastErr = null;
+          // 增加重试次数到 4 次，大幅增强抗抖动能力
+          const maxAttempts = 4;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              // 强制规范化并验证 URL 格式，以兼容 Safari 严格的底层网络库
+              const finalUrl = new URL(sign.url).href;
+              
+              const r = await fetch(finalUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': sign.contentType },
+                body: f.data,
+              });
+
+              if (!r.ok) {
+                const errorText = await r.text();
+                // 碰到 429 Too Many Requests 等限流，直接抛出交由底层 Catch 重试
+                throw new Error(`HTTP ${r.status}: ${errorText}`);
+              }
+              
+              completed++;
+              const pct = Math.round((completed / total) * 100);
+              if (pct !== lastReportedPct || completed === total) {
+                lastReportedPct = pct;
+                progressBar.style.width = pct + '%';
+                progressText.textContent = `🚀 并发上传中: ${completed}/${total} (${pct}%)...`;
+              }
+              return;
+            } catch (err) {
+              lastErr = err;
+              console.warn(`[文件 ${f.name}] 第 ${attempt} 次请求异常:`, err.message);
+              if (attempt < maxAttempts) {
+                // 指数退避重试，延长等待时间 (2s, 4s, 8s)，给 Safari 释放底层 TCP 链接和处理 CORS 的时间
+                const waitTime = Math.pow(2, attempt) * 1000;
+                await new Promise(res => setTimeout(res, waitTime));
+              }
+            }
+          }
+          console.error(`S3 上传彻底溃败 [${f.name}]:`, sign.url);
+          throw new Error(`网络通讯断开或跨域失败导致文件 ${f.name} 上传失败: ${lastErr?.message}`);
+        };
+
+        // ========== 阶段三：根据浏览器动态设置并发限制并启动上传 ==========
+        // Safari 由于严格的底层 CORS 与连接数限制，容易造成堵塞崩溃，故使用安全的 4 并发。Chrome 等现代浏览器更强大响应更快，采用 12 并发发榨干性能。
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const concurrencyLimit = isSafari ? 4 : 12;
+        
+        console.log(`[Upload] 检测到浏览器 ${isSafari ? 'Safari' : 'Chrome/非Safari'}，将应用 ${concurrencyLimit} 并发限制。`);
+        await runConcurrent(fileList, uploadOne, concurrencyLimit);
+
+        // ========== 阶段四：通知 Worker 写入最终清单 ==========
+        progressText.textContent = '🏁 正在写入清单...';
+        const finishResp = await fetch(`/api/proto?action=finish&name=${encodeURIComponent(name)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+          body: JSON.stringify({ files: fileList.map(f => f.name) }),
+        });
+
+        if (!finishResp.ok) throw new Error('清单写入失败');
+
+        progressText.textContent = '✅ 原型部署成功！';
+        toast(`原型「${name}」已上线`, 'success');
+        setTimeout(finishUpload, 1000);
+
+      } catch (e) {
+        console.error(e);
+        toast('上传失败：' + (e.message || '未知错误'), 'error');
+        progressWrap.classList.remove('show');
+      }
+    }
+
+    function finishUpload() {
+      document.getElementById('proto-progress').classList.remove('show');
+      document.getElementById('proto-name').value = '';
+      selectedProtoFiles = [];
+      document.getElementById('proto-folder-input').value = '';
+      document.getElementById('proto-drop-zone').querySelector('p').innerHTML = `<strong>点击选择 Axure 文件夹</strong><br><small>直接选择整个文件夹</small>`;
+      loadProtos();
+    }
+
+    async function deleteProto(name, btn) {
+      // 替代原生的 window.confirm，使用内联二次确认，防止 Chrome 等浏览器拦截并闪退
+      if (btn.getAttribute('data-confirm') !== 'true') {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⚠️ 再次点击确认';
+        btn.style.backgroundColor = 'var(--danger-dark)';
+        btn.style.color = 'white';
+        btn.setAttribute('data-confirm', 'true');
+        
+        // 3秒后自动恢复原状
+        setTimeout(() => {
+          if (btn && btn.parentNode) {
+            btn.innerHTML = originalText;
+            btn.removeAttribute('data-confirm');
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+          }
+        }, 3000);
+        return;
+      }
+
+      // 立即反馈
+      btn.innerHTML = '正在删除...';
+      btn.disabled = true;
+      toast(`正在删除「${name}」，请稍候...`, 'info');
+
+      const r = await fetch(`/api/proto?name=${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+        headers: adminHeaders()
+      });
+
+      if (r.ok) {
+        toast(`已成功删除「${name}」`);
+        loadProtos();
+      } else {
+        toast('删除失败', 'error');
+        btn.innerHTML = '删除';
+        btn.disabled = false;
+        btn.removeAttribute('data-confirm');
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // 静态页面
+    // ─────────────────────────────────────────────
+    async function loadPages() {
+      const r = await fetch('/api/pages');
+      const list = await r.json();
+      const el = document.getElementById('page-list');
+      if (!list.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>暂无静态页面</p></div>`;
+        return;
+      }
+      el.innerHTML = list.map(item => `
+      <div class="item-row">
+        <div class="item-icon">📃</div>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-meta">📅 ${formatDate(item.uploadTime)}</div>
+        </div>
+        <div class="item-actions">
+          <a href="/pages/${encodeURIComponent(item.name)}" target="_blank" class="btn btn-ghost btn-sm">预览</a>
+          <button class="btn btn-red btn-sm" onclick="deletePage('${item.name}', this)">删除</button>
+        </div>
+      </div>
+    `).join('');
+    }
+
+    document.getElementById('page-file-input').addEventListener('change', function () {
+      if (this.files[0]) {
+        selectedPageFile = this.files[0];
+        document.getElementById('page-selected-file').textContent = '已选择：' + selectedPageFile.name;
+        if (!document.getElementById('page-name').value) {
+          document.getElementById('page-name').value = selectedPageFile.name.replace(/\.html?$/i, '');
+        }
+      }
+    });
+
+    // 拖拽
+    const pageDrop = document.getElementById('page-drop-zone');
+    pageDrop.addEventListener('dragover', e => { e.preventDefault(); pageDrop.classList.add('dragover'); });
+    pageDrop.addEventListener('dragleave', () => pageDrop.classList.remove('dragover'));
+    pageDrop.addEventListener('drop', e => {
+      e.preventDefault();
+      pageDrop.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+        selectedPageFile = file;
+        document.getElementById('page-selected-file').textContent = '已选择：' + file.name;
+        if (!document.getElementById('page-name').value) {
+          document.getElementById('page-name').value = file.name.replace(/\.html?$/i, '');
+        }
+      } else {
+        toast('请拖入 .html 文件', 'error');
+      }
+    });
+
+    async function uploadPage() {
+      const name = document.getElementById('page-name').value.trim();
+      if (!name) { toast('请填写页面名称', 'error'); return; }
+      if (!selectedPageFile) { toast('请先选择 HTML 文件', 'error'); return; }
+
+      const content = await selectedPageFile.text();
+      const r = await fetch('/api/pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ name, content })
+      });
+
+      if (r.ok) {
+        toast(`页面「${name}」上传成功`);
+        selectedPageFile = null;
+        document.getElementById('page-file-input').value = '';
+        document.getElementById('page-name').value = '';
+        document.getElementById('page-selected-file').textContent = '';
+        loadPages();
+      } else {
+        const err = await r.json().catch(() => ({}));
+        toast('上传失败：' + (err.error || r.status), 'error');
+      }
+    }
+
+    async function deletePage(name, btn) {
+      if (btn.getAttribute('data-confirm') !== 'true') {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⚠️ 再次点击确认';
+        btn.style.backgroundColor = 'var(--danger-dark)';
+        btn.style.color = 'white';
+        btn.setAttribute('data-confirm', 'true');
+        
+        setTimeout(() => {
+          if (btn && btn.parentNode) {
+            btn.innerHTML = originalText;
+            btn.removeAttribute('data-confirm');
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+          }
+        }, 3000);
+        return;
+      }
+
+      btn.innerHTML = '正在删除...';
+      btn.disabled = true;
+
+      const r = await fetch(`/api/pages?name=${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+        headers: adminHeaders()
+      });
+      
+      if (r.ok) { 
+        toast(`已成功删除「${name}」`); 
+        loadPages(); 
+      } else { 
+        toast('删除失败', 'error'); 
+        btn.innerHTML = '删除'; 
+        btn.disabled = false; 
+        btn.removeAttribute('data-confirm');
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // 外部链接
+    // ─────────────────────────────────────────────
+    async function loadLinks() {
+      const r = await fetch('/api/links');
+      currentLinks = await r.json();
+      renderLinks();
+    }
+
+    function renderLinks() {
+      const el = document.getElementById('link-list');
+      if (!currentLinks.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>暂无外部链接</p></div>`;
+        return;
+      }
+      el.innerHTML = currentLinks.map((item, i) => `
+      <div class="link-item" data-id="${i}">
+        <div class="link-icon">${item.icon || '🌐'}</div>
+        <div class="link-info">
+          <div class="link-name">${item.name}</div>
+          <div class="link-url">${item.link}</div>
+          ${item.desc ? `<div class="link-desc">${item.desc}</div>` : ''}
+        </div>
+        <div class="link-actions">
+          <a href="${item.link}" target="_blank" class="btn btn-ghost btn-sm">↗</a>
+          <button class="btn btn-red btn-sm" onclick="removeLink(${i})">删除</button>
+        </div>
+      </div>
+    `).join('');
+
+      // 初始化拖拽排序
+      new Sortable(el, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: function () {
+          // 重排数组
+          const newOrder = [];
+          el.querySelectorAll('.link-item').forEach(item => {
+            const idx = parseInt(item.getAttribute('data-id'));
+            newOrder.push(currentLinks[idx]);
+          });
+          currentLinks = newOrder;
+          saveLinks(true); // 静默保存
+        }
+      });
+    }
+
+    function setEmoji(emoji) {
+      document.getElementById('link-icon').value = emoji;
+    }
+
+    async function addLink() {
+      const name = document.getElementById('link-name').value.trim();
+      const link = document.getElementById('link-url').value.trim();
+      const icon = document.getElementById('link-icon').value.trim() || '🌐';
+      const desc = document.getElementById('link-desc').value.trim();
+
+      if (!name || !link) { toast('名称和链接不能为空', 'error'); return; }
+      if (!link.startsWith('http')) { toast('链接格式不正确', 'error'); return; }
+
+      currentLinks.push({ name, link, icon, desc });
+      renderLinks();
+
+      document.getElementById('link-name').value = '';
+      document.getElementById('link-url').value = '';
+      document.getElementById('link-icon').value = '';
+      document.getElementById('link-desc').value = '';
+
+      await saveLinks();
+      toast('外部链接已添加并保存');
+    }
+
+    async function removeLink(index) {
+      currentLinks.splice(index, 1);
+      renderLinks();
+      await saveLinks();
+      toast('条目已删除');
+    }
+
+    async function saveLinks(silent = false) {
+      const r = await fetch('/api/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ links: currentLinks })
+      });
+      if (!r.ok && !silent) { toast('保存失败', 'error'); }
+    }
+
+  </script>
+</body>
+
+</html>

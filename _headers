@@ -1,0 +1,10 @@
+
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 如果你想让项目里的图片加载飞快，可以解开下面的注释
+# /*.jpg
+#   Cache-Control: public, max-age=31536000, immutable

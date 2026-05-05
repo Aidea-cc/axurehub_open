@@ -1,0 +1,14 @@
+{
+  "name": "cloudflare-pages-cms",
+  "version": "1.0.0",
+  "description": "Cloudflare Pages with R2/KV CMS",
+  "main": "index.html",
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "^3.48.0"
+  },
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy ."
+  }
+}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RDS产品文件库</title>
+  <style>
+    :root { --primary: #2563eb; --bg: #f8fafc; --card-bg: rgba(255,255,255,0.85); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: #1e293b; padding-bottom: 5rem; }
+
+    .hero { position: relative; height: 320px; background-image: url('https://images.unsplash.com/photo-1717810135803-830d2c4e0d43?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; margin-bottom: 3rem; }
+    .hero::after { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); }
+    .hero-content { position: relative; z-index: 10; text-align: center; color: white; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); padding: 2rem 4rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .hero p { font-size: 1.1rem; opacity: 0.9; font-weight: 500; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+    .section-title { display: flex; align-items: center; justify-content: space-between; margin: 3rem 0 1.5rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; }
+    .title-left { display: flex; align-items: center; }
+    .title-left h2 { font-size: 1.5rem; color: #334155; margin-right: 0.8rem; }
+    .badge { background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+    .badge-green { background: #d1fae5; color: #047857; }
+    .sort-tag { font-size: 0.8rem; color: #94a3b8; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+
+    .card { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; text-decoration: none; color: inherit; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 140px; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); background: white; border-color: var(--primary); }
+    .card-icon { font-size: 2rem; margin-bottom: 0.8rem; display: block; }
+    .card-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem; display: block; }
+    .card-meta { font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; }
+    .card-arrow { position: absolute; right: 1.5rem; top: 1.5rem; opacity: 0; transition: opacity 0.3s; color: var(--primary); }
+    .card:hover .card-arrow { opacity: 1; }
+
+    .type-external .card { border-left: 4px solid #10b981; }
+    .type-external .card-arrow { transform: rotate(-45deg); }
+
+    /* 加载态骨架屏 */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-card { min-height: 140px; border-radius: 12px; }
+
+    /* 搜索栏样式 */
+    .search-container { margin: -1.5rem auto 2rem; max-width: 600px; position: relative; z-index: 30; }
+    .search-wrapper { position: relative; display: flex; align-items: center; }
+    .search-input { width: 100%; padding: 1rem 1.5rem 1rem 3.5rem; border-radius: 50px; border: 1px solid rgba(0,0,0,0.1); background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.06); font-size: 1rem; outline: none; transition: all 0.3s; }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 12px 30px rgba(37,99,235,0.15); }
+    .search-icon { position: absolute; left: 1.5rem; color: #94a3b8; transition: color 0.3s; }
+    .search-input:focus + .search-icon { color: var(--primary); }
+
+    /* 管理入口按钮 */
+    .admin-fab {
+      position: absolute;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.25s;
+      z-index: 20;
+    }
+    .admin-fab:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .admin-fab svg { width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-content">
+      <h1>RDS产品文件库</h1>
+      <p>Be Still And Know</p>
+    </div>
+    <!-- 管理入口 -->
+    <a href="/admin/" class="admin-fab" title="数据管理">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+      </svg>
+      数据管理
+    </a>
+  </header>
+
+  <div class="search-container">
+    <div class="search-wrapper">
+      <input type="text" id="search-input" class="search-input" placeholder="输入名称搜索原型、页面或链接..." autocomplete="off">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </div>
+  </div>
+
+  <div class="container" id="app">
+
+    <!-- 骨架屏占位 -->
+    <div class="section-title"><div class="title-left"><h2>📦 正在进行</h2></div></div>
+    <div class="grid" id="skeleton-grid">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+  </div>
+
+  <footer style="text-align:center; margin-top:4rem; color:#94a3b8; font-size:0.85rem;">
+    RDS产品文件库 &nbsp;·&nbsp; Design By Sinner🌞
+  </footer>
+
+
+  <script>
+    const ICONS = { proto: '📁', page: '📃', external: '🌐' };
+    let ALL_DATA = { protos: [], pages: [], links: [] };
+
+    function formatDate(ts) {
+      if (!ts) return '未知';
+      return new Date(ts).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' });
+    }
+
+    function renderProtoCard(item) {
+      const href = item.url || `/proto/${encodeURIComponent(item.name)}/`;
+      return `<a href="${href}" class="card">
+        <span class="card-arrow">↗</span>
+        <span class="card-icon">📁</span>
+        <span class="card-title">${item.name}</span>
+        <div class="card-meta">📅 更新于 ${formatDate(item.uploadTime)} &nbsp;·&nbsp; ${item.fileCount} 个文件</div>
+      </a>`;
+    }
+
+    function renderPageCard(item) {
+      const href = item.url || `/pages/${encodeURIComponent(item.name)}`;
+      return `<a href="${href}" class="card">
+        <span class="card-arrow">↗</span>
+        <span class="card-icon">📃</span>
+        <span class="card-title">${item.name}</span>
+        <div class="card-meta">📅 更新于 ${formatDate(item.uploadTime)}</div>
+      </a>`;
+    }
+
+    function renderExternalCard(item) {
+      return `<a href="${item.link}" target="_blank" class="card">
+        <span class="card-arrow">➜</span>
+        <span class="card-icon">${item.icon || '🌐'}</span>
+        <span class="card-title">${item.name}</span>
+        ${item.desc ? `<div class="card-meta">${item.desc}</div>` : ''}
+      </a>`;
+    }
+
+    function renderSection(emoji, title, badgeClass, count, sortLabel, gridClass, cardsHtml) {
+      if (count === 0) return '';
+      return `
+        <div class="section-title">
+          <div class="title-left">
+            <h2>${emoji} ${title}</h2>
+            <span class="badge ${badgeClass}">${count}</span>
+          </div>
+          ${sortLabel ? `<span class="sort-tag">${sortLabel}</span>` : ''}
+        </div>
+        <div class="grid ${gridClass}">${cardsHtml}</div>
+      `;
+    }
+
+    async function safeFetch(url) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return [];
+        return await r.json();
+      } catch (e) {
+        console.warn('API 调用失败:', url, e.message);
+        return [];
+      }
+    }
+
+    function updateUI(query = '') {
+      const q = query.toLowerCase().trim();
+      const app = document.getElementById('app');
+      
+      const filteredProtos = ALL_DATA.protos.filter(i => i.name.toLowerCase().includes(q));
+      const filteredPages = ALL_DATA.pages.filter(i => i.name.toLowerCase().includes(q));
+      const filteredLinks = ALL_DATA.links.filter(i => i.name.toLowerCase().includes(q));
+
+      let html = '';
+      html += renderSection('📦', '正在进行', '', filteredProtos.length, q ? '' : '排序: 时间倒序', 'type-project',
+        filteredProtos.map(renderProtoCard).join(''));
+
+      html += renderSection('📄', '其他', '', filteredPages.length, q ? '' : '排序: 时间倒序', 'type-static',
+        filteredPages.map(renderPageCard).join(''));
+
+      html += renderSection('🔗', '历史存档', 'badge-green', filteredLinks.length, '', 'type-external',
+        filteredLinks.map(renderExternalCard).join(''));
+
+      if (!html) {
+        app.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:8rem 0;">
+          <p style="font-size:3rem;margin-bottom:1.5rem;">🔍</p>
+          <p>未找到包含 "${query}" 的内容</p>
+        </div>`;
+      } else {
+        app.innerHTML = html;
+      }
+    }
+
+    async function init() {
+      const docSearch = document.getElementById('search-input');
+      
+      // 监听搜索输入
+      docSearch.addEventListener('input', (e) => {
+        updateUI(e.target.value);
+      });
+
+      // 初始化加载数据
+      const [protos, pages, links] = await Promise.all([
+        safeFetch('/api/proto'),
+        safeFetch('/api/pages'),
+        safeFetch('/api/links'),
+      ]);
+
+      ALL_DATA.protos = protos;
+      ALL_DATA.pages = pages;
+      ALL_DATA.links = links;
+
+      updateUI();
+    }
+
+    init();
+
+  </script>
+</body>
+</html>
