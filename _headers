@@ -1,10 +1,20 @@
+# Cloudflare Pages Headers 配置
+# 注意：此文件只影响静态资源，不影响 Functions 返回的响应
 
-/*
-  Cache-Control: public, max-age=0, must-revalidate
+# 首页和管理后台：不缓存（确保始终最新）
+/index.html
+  Cache-Control: no-store, no-cache, must-revalidate
 
+/admin/*
+  Cache-Control: no-store, no-cache, must-revalidate
+
+# API 接口：短时间缓存
+/api/*
+  Cache-Control: public, max-age=0, s-maxage=60, must-revalidate
+
+# 原型文件路径：由 Functions 动态控制，此处不设置全局规则
+# （移除了原来的 /* 通配符规则，避免覆盖 Function 的缓存策略）
+
+# 静态资产：长缓存（带哈希的文件）
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
-
-# 如果你想让项目里的图片加载飞快，可以解开下面的注释
-# /*.jpg
-#   Cache-Control: public, max-age=31536000, immutable
